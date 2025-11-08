@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { ActivityIcon, BellIcon, BookIcon, SettingsIcon, StarIcon, StethoscopeIcon, ImageIcon } from './icons';
+import { ActivityIcon, BellIcon, BookIcon, SettingsIcon, StarIcon, StethoscopeIcon, ImageIcon, ShieldIcon } from './icons';
 
-type SidePanelTab = 'stats' | 'reminders' | 'symptoms' | 'education' | 'images' | 'subscription' | 'settings';
+type SidePanelTab = 'stats' | 'reminders' | 'symptoms' | 'education' | 'prevention' | 'images' | 'subscription' | 'settings';
 
 interface SidePanelProps {
     activeTab: SidePanelTab;
@@ -14,6 +14,7 @@ const tabs: { id: SidePanelTab, name: string, icon: React.ReactNode }[] = [
     { id: 'reminders', name: 'Rappels', icon: <BellIcon /> },
     { id: 'symptoms', name: 'Symptômes', icon: <StethoscopeIcon /> },
     { id: 'education', name: 'Éducation', icon: <BookIcon /> },
+    { id: 'prevention', name: 'Prévention', icon: <ShieldIcon /> },
     { id: 'images', name: 'Images', icon: <ImageIcon /> },
     { id: 'subscription', name: 'Abonnement', icon: <StarIcon /> },
     { id: 'settings', name: 'Paramètres', icon: <SettingsIcon /> },

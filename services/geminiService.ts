@@ -1,7 +1,9 @@
 
+
 import { GoogleGenAI, FunctionDeclaration, Type, Modality } from "@google/genai";
 import { Message } from '../components/ChatMessage';
 import { decode, createWavBlob } from '../utils/audioUtils';
+import { User, HealthData, HealthDataType } from "./authService";
 
 const API_KEY = process.env.API_KEY;
 if (!API_KEY) {
@@ -95,6 +97,70 @@ Tu es un assistant d'information sur la santé. Ton rôle est de fournir des inf
 
     return response;
 };
+
+export const getPreventiveTips = async (user: User, healthData: HealthData[]): Promise<string[]> => {
+    const model = 'gemini-2.5-pro';
+
+    const getLastReading = (type: HealthDataType) => {
+        const readings = healthData.filter(d => d.type === type);
+        return readings.length > 0 ? readings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null;
+    };
+
+    const lastBP = getLastReading('bloodPressure');
+    const lastBS = getLastReading('bloodSugar');
+    const lastHR = getLastReading('heartRate');
+
+    let dataSummary = 'L\'utilisateur suit activement sa santé.';
+    if (lastBP && typeof lastBP.value === 'object') {
+        dataSummary += ` Sa dernière tension artérielle était de ${lastBP.value.systolic}/${lastBP.value.diastolic} mmHg.`;
+    }
+    if (lastBS) {
+        dataSummary += ` Sa dernière glycémie était de ${lastBS.value} mg/dL.`;
+    }
+    if (lastHR) {
+        dataSummary += ` Sa dernière fréquence cardiaque enregistrée était de ${lastHR.value} bpm.`;
+    }
+
+    const prompt = `
+        Basé sur le profil suivant, génère 4 conseils de prévention personnalisés, courts et actionnables.
+        Utilisateur: ${user.name}.
+        Résumé des données de santé: ${dataSummary}
+
+        Les conseils doivent porter sur l'alimentation, l'exercice, la gestion du stress ou l'hydratation.
+        Rends les conseils encourageants et positifs. Ne sois pas alarmiste.
+    `;
+
+    const response = await ai.models.generateContent({
+        model: model,
+        contents: prompt,
+        config: {
+            systemInstruction: "Tu es un coach en bien-être et santé. Ton rôle est de fournir des conseils de prévention généraux, personnalisés et encourageants. NE JAMAIS fournir de diagnostic médical ou de plan de traitement. Tes réponses doivent être en français et formatées en JSON sous la forme `{\"tips\": [\"conseil 1\", \"conseil 2\", ...]}",
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    tips: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.STRING,
+                            description: "Un conseil de santé préventif."
+                        },
+                    },
+                },
+                required: ['tips'],
+            },
+        },
+    });
+
+    try {
+        const jsonResponse = JSON.parse(response.text);
+        return jsonResponse.tips || [];
+    } catch (e) {
+        console.error("Failed to parse JSON response for preventive tips:", response.text);
+        return ["Désolé, une erreur est survenue lors de la génération des conseils. Veuillez réessayer."];
+    }
+};
+
 
 // FIX: Added missing editImage function to handle image editing requests.
 export const editImage = async (base64Image: string, mimeType: string, prompt: string): Promise<string> => {

@@ -20,8 +20,9 @@ import { PaymentModal } from './components/PaymentModal';
 import { AlertBanner, HealthAlert } from './components/AlertBanner';
 import { useAudioRecorder } from './hooks/useAudioRecorder';
 import { showNotification, setupNotifications } from './services/notificationService';
+import { PreventionPanel } from './components/PreventionPanel';
 
-type SidePanelTab = 'stats' | 'reminders' | 'symptoms' | 'education' | 'images' | 'subscription' | 'settings';
+type SidePanelTab = 'stats' | 'reminders' | 'symptoms' | 'education' | 'prevention' | 'images' | 'subscription' | 'settings';
 
 const generateHistoricalData = (): HealthData[] => {
     const data: HealthData[] = [];
@@ -253,6 +254,8 @@ const App: React.FC = () => {
                 return <SymptomCheckerPanel />;
             case 'education':
                 return <EducationPanel />;
+            case 'prevention':
+                return user.status === 'premium' ? <PreventionPanel user={user} healthData={healthData} /> : <PremiumFeatureLock featureName="Conseils Préventifs Personnalisés" onUpgradeClick={() => handleSetActiveTab('subscription')} />;
             case 'images':
                  return user.status === 'premium' ? <ImageEditorPanel /> : <PremiumFeatureLock featureName="Éditeur d'Images IA" onUpgradeClick={() => handleSetActiveTab('subscription')} />;
             case 'subscription':
