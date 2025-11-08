@@ -1,0 +1,7 @@
+{
+  "name": "ChronicCare AI",
+  "description": "Votre assistant médical intelligent pour le suivi, la prévention et la gestion des maladies chroniques.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
