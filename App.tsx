@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthPage } from './components/AuthPage';
 import { Header } from './components/Header';
 import { User, Reminder, HealthData, login, logout, updateUser, AlertSettings } from './services/authService';
@@ -81,17 +81,23 @@ const App: React.FC = () => {
     });
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('chronic_care_current_user');
-        if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            // Load user-specific data
-            setReminders([
-                { id: '1', name: 'Metformin', dosage: '1 comprimé', time: '08:00' },
-                { id: '2', name: 'Lisinopril', dosage: '10mg', time: '09:00' },
-            ]);
-            setHealthData(generateHistoricalData());
-            setupNotifications();
+        try {
+            const storedUser = localStorage.getItem('chronic_care_current_user');
+            if (storedUser && storedUser !== 'undefined') {
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+                // Load user-specific data
+                setReminders([
+                    { id: '1', name: 'Metformin', dosage: '1 comprimé', time: '08:00' },
+                    { id: '2', name: 'Lisinopril', dosage: '10mg', time: '09:00' },
+                ]);
+                setHealthData(generateHistoricalData());
+                setupNotifications();
+            }
+        } catch (error) {
+            console.error("Échec de la restauration de la session, déconnexion :", error);
+            // If user data is corrupted, clean it up to prevent an error loop
+            logout();
         }
     }, []);
     
@@ -232,23 +238,27 @@ const App: React.FC = () => {
         }
     };
 
+    const handleSetActiveTab = (tab: SidePanelTab) => {
+        setActiveSidePanelTab(tab);
+    };
+
     const renderSidePanel = () => {
         if (!user) return null;
         switch (activeSidePanelTab) {
             case 'stats':
-                return <HealthStatsPanel healthData={healthData} onAddHealthDataClick={() => setHealthDataModalOpen(true)} user={user} onUpgradeClick={() => setActiveSidePanelTab('subscription')} />;
+                return <HealthStatsPanel healthData={healthData} onAddHealthDataClick={() => setHealthDataModalOpen(true)} user={user} onUpgradeClick={() => handleSetActiveTab('subscription')} />;
             case 'reminders':
-                return <ReminderPanel reminders={reminders} onAddClick={() => setReminderModalOpen(true)} onDeleteReminder={handleDeleteReminder} userStatus={user.status} onUpgradeClick={() => setActiveSidePanelTab('subscription')}/>;
+                return <ReminderPanel reminders={reminders} onAddClick={() => setReminderModalOpen(true)} onDeleteReminder={handleDeleteReminder} userStatus={user.status} onUpgradeClick={() => handleSetActiveTab('subscription')}/>;
             case 'symptoms':
                 return <SymptomCheckerPanel />;
             case 'education':
                 return <EducationPanel />;
             case 'images':
-                 return user.status === 'premium' ? <ImageEditorPanel /> : <PremiumFeatureLock featureName="Éditeur d'Images IA" onUpgradeClick={() => setActiveSidePanelTab('subscription')} />;
+                 return user.status === 'premium' ? <ImageEditorPanel /> : <PremiumFeatureLock featureName="Éditeur d'Images IA" onUpgradeClick={() => handleSetActiveTab('subscription')} />;
             case 'subscription':
                 return <SubscriptionPanel status={user.status} onUpgradeClick={() => setPaymentModalOpen(true)} />;
             case 'settings':
-                return user.status === 'premium' ? <SettingsPanel alertSettings={user.alertSettings} onUpdateAlertSettings={handleUpdateAlertSettings} /> : <PremiumFeatureLock featureName="Paramètres d'alerte" onUpgradeClick={() => setActiveSidePanelTab('subscription')} />;
+                return user.status === 'premium' ? <SettingsPanel alertSettings={user.alertSettings} onUpdateAlertSettings={handleUpdateAlertSettings} /> : <PremiumFeatureLock featureName="Paramètres d'alerte" onUpgradeClick={() => handleSetActiveTab('subscription')} />;
             default:
                 return null;
         }
@@ -290,7 +300,7 @@ const App: React.FC = () => {
                     />
                 </main>
 
-                <SidePanel activeTab={activeSidePanelTab} setActiveTab={setActiveSidePanelTab}>
+                <SidePanel activeTab={activeSidePanelTab} setActiveTab={handleSetActiveTab}>
                     {renderSidePanel()}
                 </SidePanel>
             </div>

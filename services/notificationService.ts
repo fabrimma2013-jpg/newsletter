@@ -13,8 +13,8 @@ export const setupNotifications = async () => {
   
   // Register the service worker
   try {
-    // Use a relative path to avoid cross-origin issues in sandboxed environments.
-    await navigator.serviceWorker.register('./sw.js');
+    // Use a relative path and specify the scope to avoid cross-origin issues in sandboxed environments.
+    await navigator.serviceWorker.register('./sw.js', { scope: './' });
   } catch (error) {
     console.error('Service Worker registration failed:', error);
   }

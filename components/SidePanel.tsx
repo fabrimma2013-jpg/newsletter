@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { ActivityIcon, BellIcon, BookIcon, SettingsIcon, StarIcon, StethoscopeIcon, ImageIcon } from './icons';
 
-// FIX: Corrected prop types to be more specific, resolving type error in App.tsx.
 type SidePanelTab = 'stats' | 'reminders' | 'symptoms' | 'education' | 'images' | 'subscription' | 'settings';
 
 interface SidePanelProps {
@@ -29,6 +28,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({ activeTab, setActiveTab, c
             tabRefs.current[activeTabIndex]?.focus();
         }
     }, [activeTab]);
+    
+    const handleTabClick = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+        const tabId = event.currentTarget.dataset.tabId as SidePanelTab | undefined;
+        if (tabId) {
+            setActiveTab(tabId);
+        }
+    }, [setActiveTab]);
 
     const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
         let nextIndex = index;
@@ -59,14 +65,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({ activeTab, setActiveTab, c
                 {tabs.map((tab, index) => (
                     <button
                         key={tab.id}
-                        // FIX: Corrected ref callback to not return a value.
                         ref={(el) => { tabRefs.current[index] = el; }}
                         id={`tab-${tab.id}`}
                         role="tab"
                         aria-selected={activeTab === tab.id}
                         aria-controls={`panel-${tab.id}`}
                         tabIndex={activeTab === tab.id ? 0 : -1}
-                        onClick={() => setActiveTab(tab.id)}
+                        data-tab-id={tab.id}
+                        onClick={handleTabClick}
                         onKeyDown={(e) => handleKeyDown(e, index)}
                         className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-stone-800 focus:ring-[#c5a382] ${
                             activeTab === tab.id
